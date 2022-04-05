@@ -28,7 +28,7 @@
         'wizards/balance_sheet.xml',
         'wizards/profit_and_loss.xml',
         'wizards/tax_report.xml',
-        'wizards/aged_partner.xml',
+        # 'wizards/aged_partner.xml',
         'wizards/journal_audit.xml',
         'reports/report.xml',
         'reports/report_partner_ledger.xml',

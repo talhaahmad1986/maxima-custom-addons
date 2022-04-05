@@ -22,7 +22,7 @@
 
                 <!-- Remove the enterprise budget option -->
 
-                <xpath expr="//div[@id='account_budget']" position="replace"/>
+<!--                <xpath expr="//div[@id='account_budget']" position="replace"/>-->
             </field>
         </record>
     </data>
