@@ -1,0 +1,146 @@
+<odoo>
+
+      <report id="stock_report"
+            model="stock.ledger"
+            name="eq_invoice_from_picking.stock_report_view"
+            string="Stock Report"
+            report_type="qweb-pdf"
+            menu="False"/>
+
+
+      <template id="stock_report_view">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+        <div id="informations" class="row mt32 mb32">
+            <div class="header" style="border-bottom: 1px solid black;">
+            <h3 class="text-center">Stock Ledger</h3>
+            </div>
+        </div>
+
+        <div class="page">
+            <table class="table table-sm table-reports">
+                <thead>
+                    <th>DO/GRN/RETURN NO</th>
+                    <th>Date</th>
+                    <th>Party</th>
+                    <th>Price</th>
+                    <th>Qty IN</th>
+                    <th>Qty OUT</th>
+                    <th>Balance</th>
+                </thead>
+                <tbody>
+                    <t t-foreach="values" t-as="docs" style="font-weight: bold;">
+                            <tr>
+                                <td><span t-esc="docs['ref']"/></td>
+                                <td><span t-esc="docs['date']"/></td>
+                                <td><span t-esc="docs['party']"/></td>
+                                <td><span t-esc="docs['price']"/></td>
+                                <td><span t-esc="docs['in']"/></td>
+                                <td><span t-esc="docs['out']"/></td>
+                                <td><span t-esc="docs['balance']"/></td>
+                            </tr>
+                        </t>
+
+                </tbody>
+            </table>
+        </div>
+
+<hr width="100%" style="background-color:black;border:medium none;clear:both;display:block;min-height:1px;line-height:0;"/>
+
+        </t>
+        <div class="footer o_standard_footer" style="border-top: 1px solid black;">
+            <div class="row text-center">
+                <div class="col col-12 text-center">
+                    <ul class="list-inline">
+                        <li class="list-inline-item">Page:</li>
+                        <li class="list-inline-item">
+                            <span class="page"/>
+                        </li>
+                        <li class="list-inline-item">/</li>
+                        <li class="list-inline-item">
+                            <span class="topage"/>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        </t>
+        </template>
+
+        <report id="single_member_report"
+            model="akqs.raabta.list_of_member"
+            name="akqs_raabta.members_report_view_single"
+            string="Member Report"
+            report_type="qweb-pdf"
+            menu="False"/>
+
+
+      <template id="members_report_view_single">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+        <div id="informations" class="row mt32 mb32">
+            <div class="header" style="border-bottom: 1px solid black;">
+            <h3 class="text-center">Member Ledger</h3>
+            </div>
+        </div>
+
+        <div class="page">
+            <table class="table table-sm table-reports">
+                <thead>
+                    <th>Date</th>
+                    <th>No.</th>
+                    <th>Remarks</th>
+                    <th>Paid Upto</th>
+                    <th>Months</th>
+                    <th>Received</th>
+<!--                    <th>Total Rec Amount</th>-->
+                </thead>
+               <tbody>
+                    <t>
+                        <tr t-foreach="groupby" t-as="doc" style="font-weight: bold;">
+                            <td colspan="7">
+                                <strong>ID:</strong> <span t-esc="doc['id']+' '+doc['partner_name']"/>
+                            </td>
+                        </tr>
+                        <tr t-foreach="members" t-as="docs">
+                            <td><span t-esc="docs['date']"/></td>
+                            <td><span t-esc="docs['move_name']"/></td>
+                            <td><span t-esc="docs['cont']"/></td>
+                            <td><span t-esc="docs['paid_upto']"/></td>
+                            <td class="text-center"><span t-esc="docs['months']"/></td>
+                            <td class="text-center"><span t-esc="docs['recd']"/></td>
+<!--                            <td class="text-center"><span t-esc="docs['balance']"/></td>-->
+                        </tr>
+                    </t>
+                </tbody>
+
+            </table>
+        </div>
+
+<hr width="100%" style="background-color:black;border:medium none;clear:both;display:block;min-height:1px;line-height:0;"/>
+
+        </t>
+        <div class="footer o_standard_footer" style="border-top: 1px solid black;">
+            <div class="row text-center">
+                <div class="col col-12 text-center">
+                    <ul class="list-inline">
+                        <li class="list-inline-item">Page:</li>
+                        <li class="list-inline-item">
+                            <span class="page"/>
+                        </li>
+                        <li class="list-inline-item">/</li>
+                        <li class="list-inline-item">
+                            <span class="topage"/>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        </t>
+        </template>
+
+
+
+</odoo>
