@@ -121,6 +121,36 @@
             </field>
         </record>
 
+		  <record id="_form" model="ir.ui.view">
+        <field name="name">stock.ledger.report</field>
+        <field name="model">stock.ledger</field>
+        <field name="arch" type="xml">
+          <form>
+              <group col="6">
+                <field name="product_id"/>
+				<field name="stock_location"/>
+                <field name="from_date"/>
+			    <field name="to_date"/>
+              </group>
+              <footer>
+                  <button name="get_data" string="Print" type="object" class="btn-primary"/>
+                  <button name="cancel" string="Discard" type="object" class="btn-primary"/>
+              </footer>
+          </form>
+        </field>
+        </record>
+
+
+    <record id="wizard_" model="ir.actions.act_window">
+        <field name="name">Stock Ledger</field>
+        <field name="res_model">stock.ledger</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="_form"/>
+        <field name="target">new</field>
+    </record>
+
+  <menuitem id="menu_valuation_custom" name="Stock Ledger" parent="stock.menu_warehouse_report" sequence="111" action="wizard_"/>
+
 
 	</data>
 </odoo>

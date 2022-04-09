@@ -483,44 +483,48 @@ class StockLedger(models.Model):
     _name = 'stock.ledger'
 
     product_id = fields.Many2one('product.template', string="Product", required=True)
-    date = fields.Date(string='Date')
-
+    from_date = fields.Datetime(string='From Date')
+    to_date = fields.Datetime(string='To Date')
+    stock_location = fields.Many2one('stock.location',string="Stock Location")
     def get_data(self):
         data = {
             'ids': self.ids,
             'model': 'stock.ledger',
             'form': self.read(),
+            'product' : self.product_id,
+            'from' : self.from_date,
+            'to':self.to_date
         }
         vals = {}
         list = []
-        layers = self.env['stock.valuation.layer'].search([('product_tmpl_id', '=', self.product_id.id)])
-        opg = layers.filtered(lambda l: 'adjustment' in l.stock_move_id.display_name)
-        opening = opg.filtered(lambda a: a.create_date.month == self.date.month and a.create_date.day == self.date.day)
+        layers = self.env['stock.valuation.layer'].search([('product_tmpl_id', '=', self.product_id.id),
+                                                           ('create_date', '>=', self.from_date),('create_date', '<=', self.to_date)])
+        opening = self.env['stock.quant'].search([('location_id','=',self.stock_location.id),('product_tmpl_id','=',self.product_id.id),('create_date', '>=', self.from_date),('create_date', '<=', self.to_date)])
         counter = 0
         for line in layers.filtered(lambda l: 'adjustment' not in l.stock_move_id.display_name):
-            vals = {'ref': line.stock_move_id.reference,
-                    'date': line.create_date,
-                    'party': self.get_partner_id(line),
-                    'price': line.stock_move_id.price,
-                    'in': line.quantity if line.quantity > 0 else False,
-                    'out': line.quantity if line.quantity < 0 else False,
-                    'balance': self.compute_blnce(counter,line,opening)
-                    }
-            list.append(vals)
-            counter +=1
+            if line.stock_move_id.picking_code == 'outgoing' and line.stock_move_id.location_id == self.stock_location or line.stock_move_id.picking_code == 'incoming' and line.stock_move_id.location_dest_id == self.stock_location:
+                vals = {'ref': line.stock_move_id.reference,
+                        'date': line.create_date,
+                        'party': self.get_partner_id(line),
+                        'price': line.stock_move_id.price,
+                        'in': line.quantity if line.quantity > 0 else False,
+                        'out': line.quantity if line.quantity < 0 else False,
+                        'balance': self.compute_blnce(counter,line,opening,vals)
+                        }
+                list.append(vals)
+                counter +=1
         data['values'] = list
-        print()
         return self.env.ref('eq_invoice_from_picking.stock_report').report_action(self, data)
 
-    def compute_blnce(self,counter,line,opening):
+    def compute_blnce(self,counter,line,opening,vals):
         if counter == 0:
             return opening.quantity
         else:
             if line.quantity < 0:
-                b = opening.quantity + line.quantity
+                b = vals.get('balance') + line.quantity
                 return b
             if line.quantity > 0:
-                b = opening.quantity + line.quantity
+                b = vals.get('balance') + line.quantity
                 return b
 
     def get_partner_id(self, line):
