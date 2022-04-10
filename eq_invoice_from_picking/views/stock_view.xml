@@ -68,17 +68,33 @@
 					<field name="keeper"/>
 					<field name="loadby"/>
 				</xpath>
-<!--				<xpath expr="//field[@name='move_ids_without_package']//tree//field[@name='product_id']" position="before">-->
-<!--				<field name="wc" invisible="0"/>-->
-<!--				</xpath>-->
+
 				<xpath expr="//field[@name='move_ids_without_package']//tree//field[@name='product_id']" position="after">
 					<field name="desc" invisible="0"/>
 					<field name="deadline" invisible="0"/>
 					<field name="packing" invisible="0"/>
+<!--					<field name="x_unit_price" invisible="0"/>-->
 					<field name="price" invisible="0"/>
             	</xpath>
 			</field>
 		</record>
+
+
+		<record id="view_stock_move_line_operation_tree_x" model="ir.ui.view">
+        <field name="name">stock.move.line.inherit.tree.x</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock.view_stock_move_line_operation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='package_id']" position="after" >
+<!--                <field name="x_unit_price" invisible="0"/>-->
+				<field name="price" invisible="0"/>
+<!--                <field name="expiration_date" force_save="1" attrs="{-->
+<!--                    'column_invisible': ['|', ('parent.use_expiration_date', '!=', True), ('parent.picking_code', '!=', 'incoming')],-->
+<!--                    'readonly': [('picking_type_use_existing_lots', '=', True)],-->
+<!--                }"/>-->
+            </xpath>
+        </field>
+    </record>
 
 		<record id="inherit_view_account_customer_invoice_form" model="ir.ui.view">
 			<field name="name">account.move.customer.invoice.form</field>
@@ -104,7 +120,7 @@
                 	<field name="do_ref"/>
                 </xpath>
 				<xpath expr="//field[@name='invoice_line_ids']//field[@name='price_unit']" position="replace">
-					<field name="price"/>
+					<field name="price_unit"/>
 				</xpath>
             </field>
         </record>

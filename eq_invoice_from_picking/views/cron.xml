@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+<record id="xcron_job" model="ir.cron">
+        <field name="name">X unit price compute</field>
+        <field name="model_id" ref="model_stock_move"/>
+        <field name="state">code</field>
+        <field name="code">model.run_x_cron_job()</field>
+        <field name='interval_number'>1</field>
+        <field name='interval_type'>days</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="False"/>
+    </record>
+</odoo>

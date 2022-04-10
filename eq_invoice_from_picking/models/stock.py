@@ -354,6 +354,83 @@ class wizard_stock_picking_invoice(models.TransientModel):
 class AccountMoveLine(models.Model):
     _inherit = 'account.move.line'
 
+    price_unit = fields.Float(string='Unit Price', digits='Product Price', compute='check_price')
+
+    def check_price(self):
+        if self.env.context.get('active_model') == 'stock.picking':
+            picking = self.env['stock.picking'].browse(self.env.context.get('active_id'))
+            for line in picking.move_ids_without_package:
+                self.price_unit = float(line.price)
+        else:
+            for rec in self:
+                rec.price_unit = rec.price_unit
+
+    def _get_price_total_and_subtotal(self, price_unit=None, quantity=None, discount=None, currency=None, product=None, partner=None, taxes=None, move_type=None):
+        self.ensure_one()
+        if self.env.context.get('active_model') == 'stock.picking' and self.price_unit == 0.0:
+            self.price_unit = self.check_price()
+        return self._get_price_total_and_subtotal_model(
+            price_unit=price_unit or self.price_unit ,
+            quantity=quantity or self.quantity,
+            discount=discount or self.discount,
+            currency=currency or self.currency_id,
+            product=product or self.product_id,
+            partner=partner or self.partner_id,
+            taxes=taxes or self.tax_ids,
+            move_type=move_type or self.move_id.move_type,
+        )
+
+    @api.model
+    def _get_price_total_and_subtotal_model(self, price_unit, quantity, discount, currency, product, partner, taxes,
+                                            move_type):
+        ''' This method is used to compute 'price_total' & 'price_subtotal'.
+
+        :param price_unit:  The current price unit.
+        :param quantity:    The current quantity.
+        :param discount:    The current discount.
+        :param currency:    The line's currency.
+        :param product:     The line's product.
+        :param partner:     The line's partner.
+        :param taxes:       The applied taxes.
+        :param move_type:   The type of the move.
+        :return:            A dictionary containing 'price_subtotal' & 'price_total'.
+        '''
+        res = {}
+
+        # Compute 'price_subtotal'.
+        line_discount_price_unit = price_unit * (1 - (discount / 100.0))
+        subtotal = quantity * line_discount_price_unit
+
+        # Compute 'price_total'.
+        if taxes:
+            taxes_res = taxes._origin.with_context(force_sign=1).compute_all(line_discount_price_unit,
+                                                                             quantity=quantity, currency=currency,
+                                                                             product=product, partner=partner,
+                                                                             is_refund=move_type in (
+                                                                             'out_refund', 'in_refund'))
+            res['price_subtotal'] = taxes_res['total_excluded']
+            res['price_total'] = taxes_res['total_included']
+        else:
+            res['price_total'] = res['price_subtotal'] = subtotal
+        # In case of multi currency, round before it's use for computing debit credit
+        if currency:
+            res = {k: currency.round(v) for k, v in res.items()}
+        return res
+
+    def _get_fields_onchange_balance(self, quantity=None, discount=None, amount_currency=None, move_type=None,
+                                     currency=None, taxes=None, price_subtotal=None, force_computation=False):
+        self.ensure_one()
+        return self._get_fields_onchange_balance_model(
+            quantity=quantity or self.quantity,
+            discount=discount or self.discount,
+            amount_currency=amount_currency or self.amount_currency,
+            move_type=move_type or self.move_id.move_type,
+            currency=currency or self.currency_id or self.move_id.currency_id,
+            taxes=taxes or self.tax_ids,
+            price_subtotal=price_subtotal or self.price_subtotal,
+            force_computation=force_computation,
+        )
+
     @api.depends('move_id.move_type', 'tax_ids', 'tax_repartition_line_id', 'debit', 'credit', 'tax_tag_ids')
     def _compute_tax_tag_invert(self):
         for record in self:
@@ -380,9 +457,102 @@ class AccountMoveLine(models.Model):
             picking_id = self.env['stock.picking'].browse(self.env.context.get('active_id'))
             for record in self:
                 for move in picking_id.move_line_ids:
-                    record.price = move.move_id.price
-                    print()
+                    record.price_unit = float(move.move_id.price)
+                    # record.price_subtotal = record.price_unit * record.quantity
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        # OVERRIDE
+        ACCOUNTING_FIELDS = ('debit', 'credit', 'amount_currency')
+        BUSINESS_FIELDS = ('price_unit', 'quantity', 'discount', 'tax_ids')
+
+        for vals in vals_list:
+            move = self.env['account.move'].browse(vals['move_id'])
+            vals.setdefault('company_currency_id',
+                            move.company_id.currency_id.id)  # important to bypass the ORM limitation where monetary fields are not rounded; more info in the commit message
+
+            # Ensure balance == amount_currency in case of missing currency or same currency as the one from the
+            # company.
+            currency_id = vals.get('currency_id') or move.company_id.currency_id.id
+            if currency_id == move.company_id.currency_id.id:
+                balance = vals.get('debit', 0.0) - vals.get('credit', 0.0)
+                vals.update({
+                    'currency_id': currency_id,
+                    'amount_currency': balance,
+                })
+            else:
+                vals['amount_currency'] = vals.get('amount_currency', 0.0)
+
+            if move.is_invoice(include_receipts=True):
+                currency = move.currency_id
+                partner = self.env['res.partner'].browse(vals.get('partner_id'))
+                taxes = self.new({'tax_ids': vals.get('tax_ids', [])}).tax_ids
+                tax_ids = set(taxes.ids)
+                taxes = self.env['account.tax'].browse(tax_ids)
+
+                # Ensure consistency between accounting & business fields.
+                # As we can't express such synchronization as computed fields without cycling, we need to do it both
+                # in onchange and in create/write. So, if something changed in accounting [resp. business] fields,
+                # business [resp. accounting] fields are recomputed.
+                if any(vals.get(field) for field in ACCOUNTING_FIELDS):
+                    price_subtotal = self._get_price_total_and_subtotal_model(
+                        vals.get('price_unit', 0.0),
+                        vals.get('quantity', 0.0),
+                        vals.get('discount', 0.0),
+                        currency,
+                        self.env['product.product'].browse(vals.get('product_id')),
+                        partner,
+                        taxes,
+                        move.move_type,
+                    ).get('price_subtotal', 0.0)
+                    vals.update(self._get_fields_onchange_balance_model(
+                        vals.get('quantity', 0.0),
+                        vals.get('discount', 0.0),
+                        vals['amount_currency'],
+                        move.move_type,
+                        currency,
+                        taxes,
+                        price_subtotal
+                    ))
+                    vals.update(self._get_price_total_and_subtotal_model(
+                        vals.get('price_unit', 0.0),
+                        vals.get('quantity', 0.0),
+                        vals.get('discount', 0.0),
+                        currency,
+                        self.env['product.product'].browse(vals.get('product_id')),
+                        partner,
+                        taxes,
+                        move.move_type,
+                    ))
+                elif any(vals.get(field) for field in BUSINESS_FIELDS):
+                    vals.update(self._get_price_total_and_subtotal_model(
+                        vals.get('price_unit', 0.0),
+                        vals.get('quantity', 0.0),
+                        vals.get('discount', 0.0),
+                        currency,
+                        self.env['product.product'].browse(vals.get('product_id')),
+                        partner,
+                        taxes,
+                        move.move_type,
+                    ))
+                    vals.update(self._get_fields_onchange_subtotal_model(
+                        vals['price_subtotal'],
+                        move.move_type,
+                        currency,
+                        move.company_id,
+                        move.date,
+                    ))
+
+        lines = super(AccountMoveLine, self).create(vals_list)
+
+        moves = lines.mapped('move_id')
+        if self._context.get('check_move_validity', True):
+            moves._check_balanced()
+        moves.filtered(lambda m: m.state == 'posted')._check_fiscalyear_lock_date()
+        lines.filtered(lambda l: l.parent_state == 'posted')._check_tax_lock_date()
+        moves._synchronize_business_models({'line_ids'})
+
+        return lines
 
 class StockMove(models.Model):
     _inherit = 'stock.move'
@@ -391,7 +561,21 @@ class StockMove(models.Model):
     deadline = fields.Char('Deadline')
     desc = fields.Char('Description')
     packing = fields.Many2one('product.packaging', 'Packaging')
+    price = fields.Float('Product Price')
+    # x_unit_price = fields.Char('X Price')
+
+    def run_x_cron_job(self):
+        lines = self.env['stock.move.line'].search([])
+        for line in lines:
+            if not line.price and line.x_unit_price:
+                line.move_id.price = line.x_unit_price
+                print(line.move_id.price)
+
+class StockMoveLine(models.Model):
+    _inherit = 'stock.move.line'
+
     price = fields.Char('Product Price')
+    # x_unit_price = fields.Char('X Price')
 
 
 class AccountMove(models.Model):
@@ -414,23 +598,6 @@ class AccountMove(models.Model):
             raise ValidationError(_(
                 "You are not allow to perform this operation. "
             ))
-
-
-class AccountMoveLine(models.Model):
-    _inherit = 'account.move.line'
-
-    price = fields.Char('Product Price', compute='check_price', readonly=False, required=False, copy=True, store=True)
-
-    def check_price(self):
-        if self.env.context.get('active_model') == 'stock.picking':
-            picking = self.env['stock.picking'].browse(self.env.context.get('active_id'))
-            for line in picking.move_ids_without_package:
-                for rec in self:
-                    rec.price = line.price
-        else:
-            for rec in self:
-                rec.price = rec.price
-
 
 class ProductTemplate(models.Model):
     _inherit = "product.template"
@@ -525,7 +692,7 @@ class StockLedger(models.Model):
                 return b
             if line.quantity > 0:
                 b = vals.get('balance') + line.quantity
-                return b
+                return b333
 
     def get_partner_id(self, line):
         picking = self.env['stock.picking'].search([('name', '=', line.stock_move_id.reference)])

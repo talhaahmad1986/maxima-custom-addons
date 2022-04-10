@@ -31,6 +31,7 @@
         'security/ir.model.access.csv',
         'views/stock_view.xml',
         'views/stock_ledger.xml',
+        'views/cron.xml'
     ],
     'demo': [],
     'images': ['static/description/main_screenshot.png'],
