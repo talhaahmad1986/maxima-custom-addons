@@ -324,8 +324,8 @@ class wizard_stock_picking_invoice(models.TransientModel):
                             elif invoice_id.move_type in ['out_invoice', 'out_refund']:
                                 prod_sale_price = prod_id.list_price
                                 move_fields = self.env['stock.move']._fields.keys()
-                                if 'x_unit_price' in move_fields:
-                                    prod_sale_price = each.x_unit_price
+                                if 'price' in move_fields:
+                                    prod_sale_price = each.price
                                 prepare_invoice_line_vals.update({'price_unit': prod_sale_price,
                                                                   'tax_ids': [(6, 0, prod_id.taxes_id.ids)], })
                             # for the invoice with different type of picking like return
