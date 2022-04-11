@@ -11,7 +11,7 @@
                     <div class="row">
                         <div class="col-3">
                             <strong>Company:</strong>
-                            <p t-esc="env.company.name"/>
+                            <p t-esc="res_company.name"/>
                         </div>
                         <div class="col-3">
                             <t t-if="data['form']['date_from']">
@@ -34,10 +34,12 @@
                     <table class="table table-sm table-reports">
                         <thead>
                             <tr>
+                                <th>No</th>
                                 <th>Date</th>
-                                <th>JRNL</th>
-                                <th>Account</th>
-                                <th>Ref</th>
+                                <th>SL.NO</th>
+                                <th>Ref. No</th>
+                                <th>ET</th>
+                                <th>Remarks</th>
                                 <th>Debit</th>
                                 <th>Credit</th>
                                 <th>Balance</th>
@@ -54,41 +56,55 @@
                                     </td>
                                     <td class="text-right">
                                         <strong t-esc="sum_partner(data, o, 'debit')"
-                                                t-options="{'widget': 'monetary', 'display_currency': env.company.currency_id}"/>
+                                                t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
                                     </td>
                                     <td class="text-right">
                                         <strong t-esc="sum_partner(data, o, 'credit')"
-                                                t-options="{'widget': 'monetary', 'display_currency': env.company.currency_id}"/>
+                                                t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
                                     </td>
                                     <td class="text-right">
                                         <strong t-esc="sum_partner(data, o, 'debit - credit')"
-                                                t-options="{'widget': 'monetary', 'display_currency': env.company.currency_id}"/>
+                                                t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
                                     </td>
                                 </tr>
                                 <tr t-foreach="lines(data, o)" t-as="line">
+                                    <td><span>No</span></td>
                                     <td>
                                         <span t-esc="line['date']"/>
                                     </td>
                                     <td>
-                                        <span t-esc="line['code']"/>
+                                        <span>SL NO</span>
+<!--                                        <span t-esc="line['code']"/>-->
                                     </td>
-                                    <td>
-                                        <span t-esc="line['a_code']"/>
-                                    </td>
+<!--                                    <td>-->
+<!--                                        <span>Ref No</span>-->
+<!--                                        <span t-esc="line['a_code']"/>-->
+<!--                                    </td>-->
+
+
                                     <td>
                                         <span t-esc="line['displayed_name']"/>
                                     </td>
+                                    <td>
+
+                                        <span>ET</span>
+                                    </td>
+<!--                                    <td></td>-->
+                                    <td>
+
+                                        <span>Remarks</span>
+                                    </td>
                                     <td class="text-right">
                                         <span t-esc="line['debit']"
-                                              t-options="{'widget': 'monetary', 'display_currency': env.company.currency_id}"/>
+                                              t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
                                     </td>
                                     <td class="text-right">
                                         <span t-esc="line['credit']"
-                                              t-options="{'widget': 'monetary', 'display_currency': env.company.currency_id}"/>
+                                              t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
                                     </td>
                                     <td class="text-right">
                                         <span t-esc="line['progress']"
-                                              t-options="{'widget': 'monetary', 'display_currency': env.company.currency_id}"/>
+                                              t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
                                     </td>
                                     <td class="text-right" t-if="data['form']['amount_currency']">
                                         <t t-if="line['currency_id']">
