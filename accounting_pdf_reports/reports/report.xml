@@ -14,8 +14,8 @@
             <field name="name">Partner Ledger</field>
             <field name="model">account.report.partner.ledger</field>
             <field name="report_type">qweb-pdf</field>
-            <field name="report_name">accounting_pdf_reports.report_partnerledger</field>
-            <field name="report_file">accounting_pdf_reports.report_partnerledger</field>
+            <field name="report_name">accounting_pdf_reports.report_partnerledger2</field>
+            <field name="report_file">accounting_pdf_reports.report_partnerledger2</field>
         </record>
 
 

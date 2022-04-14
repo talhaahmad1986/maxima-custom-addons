@@ -354,7 +354,7 @@ class wizard_stock_picking_invoice(models.TransientModel):
 class AccountMoveLine(models.Model):
     _inherit = 'account.move.line'
 
-    price_unit = fields.Float(string='Unit Price', digits='Product Price', compute='check_price')
+    price_unit = fields.Float(string='Unit Price', digits='Product Price', compute='check_price',store=True,readonly=False)
 
     def check_price(self):
         if self.env.context.get('active_model') == 'stock.picking':
@@ -453,12 +453,12 @@ class AccountMoveLine(models.Model):
             else:
                 # For invoices with taxes
                 record.tax_tag_invert = record.move_id.is_inbound()
-        if self.env.context.get('active_model') == 'stock.picking':
-            picking_id = self.env['stock.picking'].browse(self.env.context.get('active_id'))
-            for record in self:
-                for move in picking_id.move_line_ids:
-                    record.price_unit = float(move.move_id.price)
-                    # record.price_subtotal = record.price_unit * record.quantity
+        # if self.env.context.get('active_model') == 'stock.picking':
+        #     picking_id = self.env['stock.picking'].browse(self.env.context.get('active_id'))
+        #     for record in self:
+        #         for move in picking_id.move_line_ids:
+        #             record.price_unit = float(move.move_id.price)
+        #             # record.price_subtotal = record.price_unit * record.quantity
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -585,6 +585,8 @@ class AccountMove(models.Model):
     lpo = fields.Char('LPO number')
     mark = fields.Char('Mark')
     do_ref = fields.Char('DO Reference')
+    container = fields.Char('Container Number')
+    seal = fields.Char('Seal Number')
 
     def action_post(self):
         gr = self.write_uid.groups_id.filtered(lambda a: a.name == 'Move Confirmation')

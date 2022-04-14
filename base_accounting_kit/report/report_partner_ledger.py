@@ -68,7 +68,11 @@ class ReportPartnerLedger(models.AbstractModel):
             sum += r['debit'] - r['credit']
             r['progress'] = sum
             r['currency_id'] = currency.browse(r.get('currency_id'))
+            move = self.env['account.move'].search([('name', '=', r['move_name'])])
+            r['no'] = move.name
+            r['remarks'] = move.narration
             full_account.append(r)
+        print()
         return full_account
 
     def _sum_partner(self, data, partner, field):

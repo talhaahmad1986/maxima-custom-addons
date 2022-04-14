@@ -118,6 +118,8 @@
 					<field name="lpo"/>
 					<field name="mark"/>
                 	<field name="do_ref"/>
+					<field name="container"/>
+					<field name="seal"/>
                 </xpath>
 				<xpath expr="//field[@name='invoice_line_ids']//field[@name='price_unit']" position="replace">
 					<field name="price_unit"/>
