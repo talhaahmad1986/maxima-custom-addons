@@ -29,63 +29,7 @@ class AccountPartnerLedger(models.TransientModel):
     partner_ids = fields.Many2many('res.partner', 'partner_ledger_partner_rel', 'id', 'partner_id', string='Partners')
 
     def _print_report(self, data):
-        data = {
-            'ids': self.ids,
-            'model': 'account.report.partner.ledger',
-            'form': self.read()[0],
-        }
-        groupby = []
-        vals = {}
-        info = [ ]
-        counter = 0
-        for partner in self.partner_ids:
-            entries = self.env['account.move.line'].search([('date', '>=', self.date_from), ('date', '<=', self.date_to), ('partner_id', '=', partner.id)], order='date ASC')
-            for line in entries:
-                balance = line.balance
-                partner_name = line.partner_id.name
-                if partner_name not in vals and partner_name not in groupby:
-                    groupby.append(partner_name)
-                    counter += 1
-                    vals.update({
-                        partner_name: [{
-                            'sn_no': counter ,
-                            'date': line.date,
-                            'sl_no': line.move_name,
-                            'ref_no': '',
-                            'et': 'SI',
-                            'remarks': line.move_id.ref,
-                            'debit': line.debit,
-                            'credit': line.credit,
-                            'balance': balance + (line.debit - line.credit)
-
-                        }]
-                    })
-                else:
-                    if partner_name not in groupby:
-                        groupby.append(partner_name)
-                    new_dict = {
-                        'sn_no': counter,
-                        'date': line.date,
-                        'sl_no': line.move_name,
-                        'ref_no': '',
-                        'et': 'SI',
-                        'remarks': line.move_id.ref,
-                        'debit': line.debit,
-                        'credit': line.credit,
-                        'balance': balance + (line.debit - line.credit)
-
-                    }
-                    row = vals.get(partner_name)
-                    row.append(new_dict)
-        filter = {
-
-            'from': self.from_date,
-            'to': self.to_date,
-        }
-        info.append(filter)
-        data['filters'] = filter
-        data['members'] = vals
-        data['groupby'] = groupby
-        print()
+        data = self.pre_print_report(data)
+        data['form'].update({'reconciled': self.reconciled, 'amount_currency': self.amount_currency,
+                             'partner_ids': self.partner_ids.ids})
         return self.env.ref('base_accounting_kit.action_report_partnerledger').report_action(self, data=data)
-

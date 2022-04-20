@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from odoo import fields, models
+from odoo import fields, models, api
 
 
 class AccountingCommonPartnerReport(models.TransientModel):
@@ -13,6 +13,8 @@ class AccountingCommonPartnerReport(models.TransientModel):
                                          ('customer_supplier', 'Receivable and Payable Accounts')
                                          ], string="Partner's", required=True, default='customer')
     partner_ids = fields.Many2many('res.partner', string='Partners')
+
+
 
     def pre_print_report(self, data):
         data['form'].update(self.read(['result_selection'])[0])

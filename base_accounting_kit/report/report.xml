@@ -21,8 +21,8 @@
             <field name="name">Partner Ledger</field>
             <field name="model">account.report.partner.ledger</field>
             <field name="report_type">qweb-pdf</field>
-            <field name="report_name">base_accounting_kit.report_partnerledger2</field>
-            <field name="report_file">base_accounting_kit.report_partnerledger2</field>
+            <field name="report_name">base_accounting_kit.report_partnerledger</field>
+            <field name="report_file">base_accounting_kit.report_partnerledger</field>
         </record>
     <!--    # Ageing report    -->
     <record id="action_report_aged_partner_balance" model="ir.actions.report">
