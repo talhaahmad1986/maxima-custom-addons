@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="report_partnerledger" inherit_id="accounting_pdf_reports.report_partnerledger">
+        <xpath expr="//table/t/tbody/tr[2]/td[7]" position="replace">
+            <t t-foreach="_init_bal(data, o, data['form']['show_initial_balance'])" t-as="bal">
+                <td class="text-right">
+                    <span t-if="bal.get('balance') and line['progress']"
+                          t-esc="bal.get('balance') + line['progress']"
+                          t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+                    <span t-elif="line['progress']"
+                          t-esc="line['progress']"
+                          t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+                    <span t-elif="bal.get('balance')"
+                          t-esc="bal.get('balance')"
+                          t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+                    <span t-else="" t-esc="0.0"
+                          t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+                </td>
+            </t>
+        </xpath>
+        <xpath expr="//table/t/tbody/tr[1]" position="after">
+            <tr t-foreach="_init_bal(data, o, data['form']['show_initial_balance'])" t-as="bal">
+                <t t-if="bal.get('balance')">
+                    <td colspan="4">
+                        <span>Initial Balance</span>
+                    </td>
+                    <td class="text-right">
+                        <span t-esc="bal.get('debit')"
+                        />
+                        <span t-esc="res_company.currency_id.symbol"/>
+                    </td>
+                    <td class="text-right">
+                        <span t-esc="bal.get('credit')"/>
+                        <span t-esc="res_company.currency_id.symbol"/>
+                    </td>
+                    <td class="text-right">
+                        <span t-esc="bal.get('balance')"/>
+                        <span t-esc="res_company.currency_id.symbol"/>
+                    </td>
+                </t>
+            </tr>
+        </xpath>
+        <xpath expr="//table/t/tbody/tr[3]" position="after">
+            <tr>
+                <t t-foreach="_init_bal(data, o, data['form']['show_initial_balance'])" t-as="bal">
+                    <t t-if="data['form']['show_closing_balance']">
+                        <td colspan="4">
+                            <span>Closing Balance</span>
+                        </td>
+                        <td class="text-right">
+                            <span t-if="bal.get('debit') and sum_partner(data, o, 'debit')"
+                                  t-esc="bal.get('debit') + sum_partner(data, o, 'debit')"/>
+                            <span t-elif="sum_partner(data, o, 'debit')" t-esc="sum_partner(data, o, 'debit')"/>
+                            <span t-elif="bal.get('debit')" t-esc="bal.get('debit')"/>
+                            <span t-else="" t-esc="0.0"/>
+                            <span t-esc="res_company.currency_id.symbol"/>
+                        </td>
+                        <td class="text-right">
+                            <span t-if="bal.get('credit') and sum_partner(data, o, 'credit')"
+                                  t-esc="bal.get('credit') + sum_partner(data, o, 'credit')"/>
+                            <span t-elif="sum_partner(data, o, 'credit')" t-esc="sum_partner(data, o, 'credit')"/>
+                            <span t-elif="bal.get('credit')" t-esc="bal.get('credit')"/>
+                            <span t-else="" t-esc="0.0"/>
+                            <span t-esc="res_company.currency_id.symbol"/>
+                        </td>
+                        <td class="text-right">
+                            <span t-if="bal.get('balance') and sum_partner(data, o, 'debit - credit')"
+                                  t-esc="bal.get('balance') + sum_partner(data, o, 'debit - credit')"/>
+                            <span t-elif="sum_partner(data, o, 'debit - credit')"
+                                  t-esc="sum_partner(data, o, 'debit - credit')"/>
+                            <span t-elif="bal.get('balance')"
+                                  t-esc="bal.get('balance')"/>
+                            <span t-else="" t-esc="0.0"/>
+                            <span t-esc="res_company.currency_id.symbol"/>
+                        </td>
+                    </t>
+                </t>
+            </tr>
+        </xpath>
+    </template>
+
+</odoo>
